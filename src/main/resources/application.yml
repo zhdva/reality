@@ -1,0 +1,11 @@
+email:
+  host: "${EMAIL_HOST}"
+  port: "${EMAIL_PORT}"
+  login: "${EMAIL_LOGIN}"
+  password: "${EMAIL_PASSWORD}"
+telegram:
+  bot:
+    name: "${BOT_NAME}"
+    token: "${BOT_TOKEN}"
+  chat:
+    id: "${CHAT_ID}"
