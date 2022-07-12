@@ -53,7 +53,9 @@ public class EmailService {
     }
 
     public void checkEmail() {
-        try (IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX")) {
+        try {
+            IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
+
             if (inboxFolder.isOpen()) {
                 return;
             }
@@ -64,20 +66,20 @@ public class EmailService {
             toMyselfFolder.open(Folder.READ_WRITE);
 
             if (toMyselfFolder.getMessageCount() == 0) {
-                toMyselfFolder.close();
                 return;
             }
 
-            for (Message message: toMyselfFolder.getMessages()) {
+            for (Message message : toMyselfFolder.getMessages()) {
                 handleMessage(message);
             }
 
-            toMyselfFolder.close();
-
             deleteAllMessagesInFolder(inboxFolder);
 
-        } catch (MessagingException | IOException | TelegramApiException e) {
+        } catch (IOException | TelegramApiException | MessagingException e) {
             e.printStackTrace();
+
+        } finally {
+            closeAllFolders();
         }
     }
 
@@ -100,6 +102,25 @@ public class EmailService {
             innerFolder.open(Folder.READ_WRITE);
             ((IMAPFolder) innerFolder).moveMessages(innerFolder.getMessages(), trashFolder);
             innerFolder.close();
+        }
+    }
+
+    private void closeAllFolders() {
+        try {
+            for (Folder folder: store.getPersonalNamespaces()[0].list()) {
+                if (folder.getName().equals("INBOX")) {
+                    for (Folder innerFolder: folder.list()) {
+                        if (innerFolder.isOpen()) {
+                            innerFolder.close();
+                        }
+                    }
+                }
+                if (folder.isOpen()) {
+                    folder.close();
+                }
+            }
+        } catch (MessagingException e) {
+            e.printStackTrace();
         }
     }
 }
