@@ -66,6 +66,8 @@ public class EmailService {
             toMyselfFolder.open(Folder.READ_WRITE);
 
             if (toMyselfFolder.getMessageCount() == 0) {
+                toMyselfFolder.close();
+                inboxFolder.close();
                 return;
             }
 
@@ -75,11 +77,11 @@ public class EmailService {
 
             deleteAllMessagesInFolder(inboxFolder);
 
+            toMyselfFolder.close();
+            inboxFolder.close();
+
         } catch (IOException | TelegramApiException | MessagingException e) {
             e.printStackTrace();
-
-        } finally {
-            closeAllFolders();
         }
     }
 
@@ -102,25 +104,6 @@ public class EmailService {
             innerFolder.open(Folder.READ_WRITE);
             ((IMAPFolder) innerFolder).moveMessages(innerFolder.getMessages(), trashFolder);
             innerFolder.close();
-        }
-    }
-
-    private void closeAllFolders() {
-        try {
-            for (Folder folder: store.getPersonalNamespaces()[0].list()) {
-                if (folder.getName().equals("INBOX")) {
-                    for (Folder innerFolder: folder.list()) {
-                        if (innerFolder.isOpen()) {
-                            innerFolder.close();
-                        }
-                    }
-                }
-                if (folder.isOpen()) {
-                    folder.close();
-                }
-            }
-        } catch (MessagingException e) {
-            e.printStackTrace();
         }
     }
 }
