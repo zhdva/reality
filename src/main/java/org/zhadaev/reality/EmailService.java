@@ -16,6 +16,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @Service
@@ -54,56 +57,51 @@ public class EmailService {
 
     public void checkEmail() {
         try {
-            IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
+            IMAPFolder toMyselfFolder = (IMAPFolder) store.getFolder("INBOX/ToMyself");
 
-            if (inboxFolder.isOpen()) {
+            if (toMyselfFolder.isOpen()) {
                 return;
             }
 
-            inboxFolder.open(Folder.READ_WRITE);
-
-            IMAPFolder toMyselfFolder = (IMAPFolder) inboxFolder.getFolder("ToMyself");
             toMyselfFolder.open(Folder.READ_WRITE);
 
             if (toMyselfFolder.getMessageCount() == 0) {
                 toMyselfFolder.close();
-                inboxFolder.close();
                 return;
             }
 
+            List<Message> messagesWithPhoto = new ArrayList<>();
+            List<Message> messagesWithoutPhoto = new ArrayList<>();
             for (Message message : toMyselfFolder.getMessages()) {
-                handleMessage(message);
+                InputStream photo = getPhotoFromMessage(message);
+                if (photo != null) {
+                    messagesWithPhoto.add(message);
+                    telegramBot.sendPhoto(photo);
+                } else {
+                    messagesWithoutPhoto.add(message);
+                }
             }
 
-            deleteAllMessagesInFolder(inboxFolder);
+            toMyselfFolder.moveMessages(messagesWithPhoto.toArray(new Message[]{}), store.getFolder("Детекция движения"));
+            toMyselfFolder.moveMessages(messagesWithoutPhoto.toArray(new Message[]{}), store.getFolder("Корзина"));
 
             toMyselfFolder.close();
-            inboxFolder.close();
 
         } catch (IOException | TelegramApiException | MessagingException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleMessage(Message message) throws MessagingException, IOException, TelegramApiException {
+    private InputStream getPhotoFromMessage(Message message) throws MessagingException, IOException {
         message.setFlag(Flags.Flag.SEEN, true);
         Multipart content = (Multipart) message.getContent();
         for (int i = 0; i < content.getCount(); i++) {
             BodyPart bodyPart = content.getBodyPart(i);
             if (bodyPart.isMimeType(MimeTypeUtils.IMAGE_JPEG_VALUE)) {
-                telegramBot.sendPhoto(bodyPart.getInputStream());
-                ((IMAPFolder) message.getFolder()).moveMessages(new Message[]{message}, store.getFolder("Детекция движения"));
+                return bodyPart.getInputStream();
             }
         }
+        return null;
     }
 
-    private void deleteAllMessagesInFolder(IMAPFolder folder) throws MessagingException {
-        Folder trashFolder = store.getFolder("Корзина");
-        folder.moveMessages(folder.getMessages(), trashFolder);
-        for (Folder innerFolder: folder.list()) {
-            innerFolder.open(Folder.READ_WRITE);
-            ((IMAPFolder) innerFolder).moveMessages(innerFolder.getMessages(), trashFolder);
-            innerFolder.close();
-        }
-    }
 }
