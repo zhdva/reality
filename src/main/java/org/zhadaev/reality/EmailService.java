@@ -36,7 +36,7 @@ public class EmailService {
     @Value("${email.password}")
     private String password;
 
-    private Store store;
+    private Properties properties = new Properties();
 
     private TelegramBot telegramBot;
 
@@ -45,23 +45,18 @@ public class EmailService {
     }
 
     @PostConstruct
-    void setup() throws MessagingException {
-        Properties properties = new Properties();
+    void setup() {
         properties.put("mail.imap.host", host);
         properties.put("mail.imap.port", port);
         properties.put("mail.imaps.ssl.trust", "*");
-        Session emailSession = Session.getDefaultInstance(properties);
-        store = emailSession.getStore("imaps");
-        store.connect(host, login, password);
     }
 
     public void checkEmail() {
-        try {
-            IMAPFolder toMyselfFolder = (IMAPFolder) store.getFolder("INBOX/ToMyself");
+        Session emailSession = Session.getDefaultInstance(properties);
+        try (Store store = emailSession.getStore("imaps")) {
+            store.connect(host, login, password);
 
-            if (toMyselfFolder.isOpen()) {
-                return;
-            }
+            IMAPFolder toMyselfFolder = (IMAPFolder) store.getFolder("INBOX/ToMyself");
 
             toMyselfFolder.open(Folder.READ_WRITE);
 
