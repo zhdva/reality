@@ -9,3 +9,5 @@ telegram:
     token: "${BOT_TOKEN}"
   chat:
     id: "${CHAT_ID}"
+server:
+  port: 8080
