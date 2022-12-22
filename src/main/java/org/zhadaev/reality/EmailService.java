@@ -17,8 +17,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 @Service
@@ -51,36 +49,34 @@ public class EmailService {
         properties.put("mail.imaps.ssl.trust", "*");
     }
 
-    public void checkEmail() {
+    public synchronized void checkEmail() {
         Session emailSession = Session.getDefaultInstance(properties);
         try (Store store = emailSession.getStore("imaps")) {
             store.connect(host, login, password);
 
-            IMAPFolder toMyselfFolder = (IMAPFolder) store.getFolder("INBOX/ToMyself");
+            IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
 
-            toMyselfFolder.open(Folder.READ_WRITE);
+            inboxFolder.open(Folder.READ_WRITE);
 
-            if (toMyselfFolder.getMessageCount() == 0) {
-                toMyselfFolder.close();
+            if (inboxFolder.getMessageCount() == 0) {
+                inboxFolder.close();
                 return;
             }
 
-            List<Message> messagesWithPhoto = new ArrayList<>();
-            List<Message> messagesWithoutPhoto = new ArrayList<>();
-            for (Message message : toMyselfFolder.getMessages()) {
+            for (Message message : inboxFolder.getMessages()) {
+                if (!message.getFrom()[0].toString().contains(login)) {
+                    continue;
+                }
                 InputStream photo = getPhotoFromMessage(message);
                 if (photo != null) {
-                    messagesWithPhoto.add(message);
                     telegramBot.sendPhoto(photo);
+                    inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Детекция движения"));
                 } else {
-                    messagesWithoutPhoto.add(message);
+                    inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Корзина"));
                 }
             }
 
-            toMyselfFolder.moveMessages(messagesWithPhoto.toArray(new Message[]{}), store.getFolder("Детекция движения"));
-            toMyselfFolder.moveMessages(messagesWithoutPhoto.toArray(new Message[]{}), store.getFolder("Корзина"));
-
-            toMyselfFolder.close();
+            inboxFolder.close();
 
         } catch (IOException | TelegramApiException | MessagingException e) {
             e.printStackTrace();

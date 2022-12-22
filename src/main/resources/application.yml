@@ -1,3 +1,10 @@
+spring:
+  main:
+    allow-circular-references: true
+server:
+  port: 8080
+app:
+  host: "${APP_HOST}"
 email:
   host: "${EMAIL_HOST}"
   port: "${EMAIL_PORT}"
@@ -5,9 +12,7 @@ email:
   password: "${EMAIL_PASSWORD}"
 telegram:
   bot:
-    name: "${BOT_NAME}"
+    name: "reality-bot"
     token: "${BOT_TOKEN}"
   chat:
     id: "${CHAT_ID}"
-server:
-  port: 8080

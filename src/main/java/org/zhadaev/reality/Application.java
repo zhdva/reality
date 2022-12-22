@@ -2,26 +2,25 @@ package org.zhadaev.reality;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
-@EnableScheduling
+@RestController
 public class Application {
 
-    private EmailService emailService;
+    private Scheduler scheduler;
 
-    public Application(EmailService emailService) {
-        this.emailService = emailService;
+    public Application(Scheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 
-    @Scheduled(fixedDelay = 3000)
-    private void start() {
-        emailService.checkEmail();
+    @GetMapping("/startSchedule")
+    public void startSchedule() {
+        scheduler.startSchedule();
     }
-
 }
