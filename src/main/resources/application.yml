@@ -10,6 +10,7 @@ email:
   port: "${EMAIL_PORT}"
   login: "${EMAIL_LOGIN}"
   password: "${EMAIL_PASSWORD}"
+  necessaryCount: "${NECESSARY_COUNT:50000}"
 telegram:
   bot:
     name: "reality-bot"

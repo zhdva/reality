@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @EnableScheduling
@@ -22,15 +23,7 @@ public class Scheduler {
     @Value("${server.port}")
     private String port;
 
-    private EmailService emailService;
-
-    private boolean schedulerEnabled;
-
     private RestTemplate restTemplate;
-
-    public Scheduler(EmailService emailService) {
-        this.emailService = emailService;
-    }
 
     @PostConstruct
     private void init() {
@@ -42,21 +35,14 @@ public class Scheduler {
         restTemplate = new RestTemplate(requestFactory);
     }
 
-    @Scheduled(fixedDelay = 600_000)
-    public void restartSchedule() {
-        schedulerEnabled = false;
-        restTemplate.getForObject(host + "/startSchedule", Void.class);
-    }
-
-    public void startSchedule() {
-        schedulerEnabled = true;
-    }
-
-    @Scheduled(fixedDelay = 3000)
+    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.SECONDS)
     private void checkEmail() {
-        if (schedulerEnabled) {
-            emailService.checkEmail();
-        }
+        restTemplate.postForObject(host + "/email/process", null, Void.class);
+    }
+
+    @Scheduled(fixedDelay = 14, timeUnit = TimeUnit.DAYS)
+    private void removeUnnecessary() {
+        restTemplate.delete(host + "/email/unnecessary");
     }
 
 }

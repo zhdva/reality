@@ -9,10 +9,8 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -22,37 +20,27 @@ import java.util.Properties;
 @Service
 public class EmailService {
 
-    @Value("${email.host}")
-    private String host;
+    private final Properties properties = new Properties();
 
-    @Value("${email.port}")
-    private String port;
+    private final EmailProperties emailProperties;
+    private final TelegramBot telegramBot;
 
-    @Value("${email.login}")
-    private String login;
-
-    @Value("${email.password}")
-    private String password;
-
-    private Properties properties = new Properties();
-
-    private TelegramBot telegramBot;
-
-    public EmailService(TelegramBot telegramBot) {
+    public EmailService(EmailProperties emailProperties, TelegramBot telegramBot) {
+        this.emailProperties = emailProperties;
         this.telegramBot = telegramBot;
     }
 
     @PostConstruct
     void setup() {
-        properties.put("mail.imap.host", host);
-        properties.put("mail.imap.port", port);
+        properties.put("mail.imap.host", emailProperties.getHost());
+        properties.put("mail.imap.port", emailProperties.getPort());
         properties.put("mail.imaps.ssl.trust", "*");
     }
 
     public synchronized void checkEmail() {
         Session emailSession = Session.getDefaultInstance(properties);
         try (Store store = emailSession.getStore("imaps")) {
-            store.connect(host, login, password);
+            store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
 
             IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
 
@@ -64,7 +52,7 @@ public class EmailService {
             }
 
             for (Message message : inboxFolder.getMessages()) {
-                if (!message.getFrom()[0].toString().contains(login)) {
+                if (!message.getFrom()[0].toString().contains(emailProperties.getLogin())) {
                     continue;
                 }
                 InputStream photo = getPhotoFromMessage(message);
@@ -78,7 +66,7 @@ public class EmailService {
 
             inboxFolder.close();
 
-        } catch (IOException | TelegramApiException | MessagingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -93,6 +81,35 @@ public class EmailService {
             }
         }
         return null;
+    }
+
+    public void removeUnnecessary() {
+        Session emailSession = Session.getDefaultInstance(properties);
+        try (Store store = emailSession.getStore("imaps")) {
+            store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
+
+            IMAPFolder motionDetectionFolder = (IMAPFolder) store.getFolder("Детекция движения");
+
+            motionDetectionFolder.open(Folder.READ_WRITE);
+
+            int unnecessaryCount = motionDetectionFolder.getMessageCount() - emailProperties.getNecessaryCount();
+            if (unnecessaryCount <= 0) {
+                motionDetectionFolder.close();
+                return;
+            }
+
+            Message[] unnecessaryMessages = motionDetectionFolder.getMessages(0, unnecessaryCount - 1);
+            for (Message message : unnecessaryMessages) {
+                message.setFlag(Flags.Flag.DELETED, true);
+            }
+
+            motionDetectionFolder.expunge(unnecessaryMessages);
+
+            motionDetectionFolder.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
