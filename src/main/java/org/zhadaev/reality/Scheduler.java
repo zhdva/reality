@@ -40,7 +40,7 @@ public class Scheduler {
         restTemplate.postForObject(host + "/email/process", null, Void.class);
     }
 
-    @Scheduled(fixedDelay = 14, timeUnit = TimeUnit.DAYS)
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.DAYS)
     private void removeUnnecessary() {
         restTemplate.delete(host + "/email/unnecessary");
     }
