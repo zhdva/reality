@@ -10,10 +10,10 @@ email:
   port: "${EMAIL_PORT}"
   login: "${EMAIL_LOGIN}"
   password: "${EMAIL_PASSWORD}"
-  necessaryCount: "${NECESSARY_COUNT:50000}"
+  necessaryCount: "${EMAIL_NECESSARY_COUNT:50000}"
 telegram:
   bot:
     name: "reality-bot"
-    token: "${BOT_TOKEN}"
+    token: "${TG_BOT_TOKEN}"
   chat:
-    id: "${CHAT_ID}"
+    id: "${TG_CHAT_ID}"
