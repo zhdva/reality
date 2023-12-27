@@ -98,7 +98,7 @@ public class EmailService {
                 return;
             }
 
-            Message[] unnecessaryMessages = motionDetectionFolder.getMessages(0, unnecessaryCount - 1);
+            Message[] unnecessaryMessages = motionDetectionFolder.getMessages(1, unnecessaryCount);
             for (Message message : unnecessaryMessages) {
                 message.setFlag(Flags.Flag.DELETED, true);
             }
