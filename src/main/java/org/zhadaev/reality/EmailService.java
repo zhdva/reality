@@ -35,6 +35,7 @@ public class EmailService {
         properties.put("mail.imap.host", emailProperties.getHost());
         properties.put("mail.imap.port", emailProperties.getPort());
         properties.put("mail.imaps.ssl.trust", "*");
+        properties.put("mail.imaps.partialfetch", "false");
     }
 
     public synchronized void checkEmail() {
