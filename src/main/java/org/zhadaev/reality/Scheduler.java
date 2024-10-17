@@ -35,7 +35,7 @@ public class Scheduler {
         restTemplate = new RestTemplate(requestFactory);
     }
 
-    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.SECONDS)
     private void checkEmail() {
         restTemplate.postForObject(host + "/email/process", null, Void.class);
     }
