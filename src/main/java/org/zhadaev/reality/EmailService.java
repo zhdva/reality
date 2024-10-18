@@ -47,13 +47,12 @@ public class EmailService {
 
             inboxFolder.open(Folder.READ_WRITE);
 
-            int messageCount = inboxFolder.getMessageCount();
-            if (messageCount == 0) {
+            if (inboxFolder.getMessageCount() == 0) {
                 inboxFolder.close();
                 return;
             }
 
-            for (Message message : inboxFolder.getMessages(1, Math.min(messageCount, 10))) {
+            for (Message message : inboxFolder.getMessages()) {
                 if (!message.getFrom()[0].toString().contains(emailProperties.getLogin())) {
                     continue;
                 }
