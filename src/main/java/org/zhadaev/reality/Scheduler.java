@@ -35,7 +35,7 @@ public class Scheduler {
         restTemplate = new RestTemplate(requestFactory);
     }
 
-    @Scheduled(fixedDelay = 3, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = (1000/TelegramBot.MESSAGES_PER_SECOND_LIMIT))
     private void checkEmail() {
         restTemplate.postForObject(host + "/email/process", null, Void.class);
     }

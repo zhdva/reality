@@ -39,6 +39,10 @@ public class EmailService {
     }
 
     public synchronized void checkEmail() {
+        if (!telegramBot.isAllowedToSendMessage()) {
+            return;
+        }
+
         Session emailSession = Session.getDefaultInstance(properties);
         try (Store store = emailSession.getStore("imaps")) {
             store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
@@ -60,6 +64,7 @@ public class EmailService {
                 if (photo != null) {
                     telegramBot.sendPhoto(photo);
                     inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Детекция движения"));
+                    break;
                 } else {
                     inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Корзина"));
                 }
