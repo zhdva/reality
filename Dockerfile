@@ -1,9 +1,10 @@
-FROM openjdk:8-jdk-alpine
+FROM amazoncorretto:8-alpine-jdk
 
 COPY target/reality.jar /reality/
+COPY tinyproxy.conf /tinyproxy/
 
-WORKDIR /reality
+RUN apk add --no-cache tinyproxy
 
-EXPOSE 8080
+EXPOSE 8080 8888
 
-ENTRYPOINT ["java", "-jar", "reality.jar"]
+CMD ["sh", "-c", "tinyproxy -d -c /tinyproxy/tinyproxy.conf & java -jar /reality/reality.jar"]
