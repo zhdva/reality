@@ -1,14 +1,7 @@
 package org.zhadaev.reality;
 
 import com.sun.mail.imap.IMAPFolder;
-import jakarta.mail.BodyPart;
-import jakarta.mail.Flags;
-import jakarta.mail.Folder;
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Multipart;
-import jakarta.mail.Session;
-import jakarta.mail.Store;
+import jakarta.mail.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 
@@ -73,7 +66,7 @@ public class EmailService {
             inboxFolder.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Ошибка при обработке писем: " + e.getMessage());
         }
     }
 
@@ -82,7 +75,7 @@ public class EmailService {
         Multipart content = (Multipart) message.getContent();
         for (int i = 0; i < content.getCount(); i++) {
             BodyPart bodyPart = content.getBodyPart(i);
-            if (bodyPart.isMimeType(MimeTypeUtils.IMAGE_JPEG_VALUE)) {
+            if (bodyPart.isMimeType(MimeTypeUtils.IMAGE_JPEG_VALUE) || bodyPart.isMimeType("image/jpg")) {
                 return bodyPart.getInputStream();
             }
         }
@@ -114,7 +107,7 @@ public class EmailService {
             motionDetectionFolder.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Ошибка при удалении старых писем: " + e.getMessage());
         }
     }
 
