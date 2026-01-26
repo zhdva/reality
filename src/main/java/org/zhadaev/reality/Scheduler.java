@@ -37,12 +37,20 @@ public class Scheduler {
 
     @Scheduled(fixedDelay = (1000/TelegramBot.MESSAGES_PER_SECOND_LIMIT))
     private void checkEmail() {
-        restTemplate.postForObject(host + "/email/process", null, Void.class);
+        try {
+            restTemplate.postForObject(host + "/email/process", null, Void.class);
+        } catch (Exception e) {
+            System.out.println("Ошибка отправки запроса на обработку писем: " + e.getMessage());
+        }
     }
 
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.DAYS)
     private void removeUnnecessary() {
-        restTemplate.delete(host + "/email/unnecessary");
+        try {
+            restTemplate.delete(host + "/email/unnecessary");
+        } catch (Exception e) {
+            System.out.println("Ошибка отправки запроса на удаление старых писем: " + e.getMessage());
+        }
     }
 
 }
