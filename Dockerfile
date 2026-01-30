@@ -1,10 +1,11 @@
 FROM amazoncorretto:8-alpine-jdk
 
 COPY target/reality.jar /reality/
-COPY tinyproxy.conf /tinyproxy/
+COPY entrypoint.sh /entrypoint.sh
 
-RUN apk add --no-cache tinyproxy
+RUN apk add --no-cache tailscale curl
+RUN chmod +x /entrypoint.sh
 
-EXPOSE 8080 8888
+EXPOSE 8080
 
-CMD ["sh", "-c", "tinyproxy -d -c /tinyproxy/tinyproxy.conf & java -jar /reality/reality.jar"]
+ENTRYPOINT ["/entrypoint.sh"]
