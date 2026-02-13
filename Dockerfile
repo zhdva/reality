@@ -1,4 +1,4 @@
-FROM amazoncorretto:8-alpine-jdk
+FROM amazoncorretto:25-alpine-jdk
 
 COPY target/reality.jar /reality/
 COPY entrypoint.sh /entrypoint.sh

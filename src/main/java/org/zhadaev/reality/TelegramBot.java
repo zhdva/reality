@@ -8,7 +8,6 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -22,21 +21,18 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private final LinkedList<LocalDateTime> sentMessagesQueue = new LinkedList<>();
 
-    @PostConstruct
-    void init() {
+    @Value("${telegram.bot.name}")
+    private String botUsername;
+
+    @Value("${telegram.chat.id}")
+    private String chatId;
+
+    public TelegramBot(@Value("${telegram.bot.token}") String botToken) {
+        super(botToken);
         LocalDateTime startTime = LocalDateTime.now().minusMinutes(1);
         IntStream.range(0, MESSAGES_PER_MINUTE_LIMIT)
                 .forEach(i -> sentMessagesQueue.addLast(startTime));
     }
-
-    @Value("${telegram.bot.name}")
-    private String botUsername;
-
-    @Value("${telegram.bot.token}")
-    private String botToken;
-
-    @Value("${telegram.chat.id}")
-    private String chatId;
 
     @Override
     public void onUpdateReceived(Update update) {}
@@ -44,11 +40,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public String getBotUsername() {
         return botUsername;
-    }
-
-    @Override
-    public String getBotToken() {
-        return botToken;
     }
 
     public boolean isAllowedToSendMessage() {

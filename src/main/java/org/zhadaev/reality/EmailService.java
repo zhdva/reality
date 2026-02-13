@@ -1,11 +1,12 @@
 package org.zhadaev.reality;
 
 import com.sun.mail.imap.IMAPFolder;
+import jakarta.annotation.PostConstruct;
 import jakarta.mail.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -31,7 +32,7 @@ public class EmailService {
         properties.put("mail.imaps.partialfetch", "false");
     }
 
-    public synchronized void checkEmail() {
+    public void checkEmail() {
         if (!telegramBot.isAllowedToSendMessage()) {
             return;
         }
@@ -41,37 +42,44 @@ public class EmailService {
             store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
 
             IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
+            processMessages(inboxFolder);
 
-            inboxFolder.open(Folder.READ_WRITE);
-
-            if (inboxFolder.getMessageCount() == 0) {
-                inboxFolder.close();
-                return;
+            for (Folder inboxSubfolder: inboxFolder.list()) {
+                processMessages((IMAPFolder) inboxSubfolder);
             }
-
-            for (Message message : inboxFolder.getMessages()) {
-                if (!message.getFrom()[0].toString().contains(emailProperties.getLogin())) {
-                    continue;
-                }
-                InputStream photo = getPhotoFromMessage(message);
-                if (photo != null) {
-                    telegramBot.sendPhoto(photo);
-                    inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Детекция движения"));
-                    break;
-                } else {
-                    inboxFolder.moveMessages(new Message[]{message}, store.getFolder("Корзина"));
-                }
-            }
-
-            inboxFolder.close();
 
         } catch (Exception e) {
             System.out.println("Ошибка при обработке писем: " + e.getMessage());
         }
     }
 
+    private void processMessages(IMAPFolder inboxFolder) throws MessagingException, IOException, TelegramApiException {
+        inboxFolder.open(Folder.READ_WRITE);
+
+        if (inboxFolder.getMessageCount() == 0) {
+            inboxFolder.close();
+            return;
+        }
+
+        for (Message message : inboxFolder.getMessages()) {
+            if (!message.getFrom()[0].toString().contains(emailProperties.getLogin())) {
+                continue;
+            }
+            InputStream photo = getPhotoFromMessage(message);
+            if (photo != null) {
+                telegramBot.sendPhoto(photo);
+                message.setFlag(Flags.Flag.SEEN, true);
+                inboxFolder.moveMessages(new Message[]{message}, inboxFolder.getStore().getFolder("Детекция движения"));
+                break;
+            } else {
+                inboxFolder.moveMessages(new Message[]{message}, inboxFolder.getStore().getFolder("Корзина"));
+            }
+        }
+
+        inboxFolder.close();
+    }
+
     private InputStream getPhotoFromMessage(Message message) throws MessagingException, IOException {
-        message.setFlag(Flags.Flag.SEEN, true);
         Multipart content = (Multipart) message.getContent();
         for (int i = 0; i < content.getCount(); i++) {
             BodyPart bodyPart = content.getBodyPart(i);
