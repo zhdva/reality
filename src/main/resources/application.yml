@@ -5,8 +5,8 @@ server:
 app:
   host: "${APP_HOST}"
 email:
-  host: "${EMAIL_HOST}"
-  port: "${EMAIL_PORT}"
+  host: "${EMAIL_HOST:imap.mail.ru}"
+  port: "${EMAIL_PORT:993}"
   login: "${EMAIL_LOGIN}"
   password: "${EMAIL_PASSWORD}"
   necessaryCount: "${EMAIL_NECESSARY_COUNT:50000}"
