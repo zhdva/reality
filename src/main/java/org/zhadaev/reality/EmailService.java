@@ -2,44 +2,37 @@ package org.zhadaev.reality;
 
 import com.sun.mail.imap.IMAPFolder;
 import jakarta.annotation.PostConstruct;
+import jakarta.inject.Singleton;
 import jakarta.mail.*;
-import org.springframework.stereotype.Service;
-import org.springframework.util.MimeTypeUtils;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
-@Service
+@Singleton
 public class EmailService {
 
     private final Properties properties = new Properties();
 
     private final EmailProperties emailProperties;
-    private final TelegramBot telegramBot;
+    private final TelegramSender telegramSender;
 
-    public EmailService(EmailProperties emailProperties, TelegramBot telegramBot) {
+    public EmailService(EmailProperties emailProperties, TelegramSender telegramSender) {
         this.emailProperties = emailProperties;
-        this.telegramBot = telegramBot;
+        this.telegramSender = telegramSender;
     }
 
     @PostConstruct
     void setup() {
-        properties.put("mail.imap.host", emailProperties.getHost());
-        properties.put("mail.imap.port", emailProperties.getPort());
+        properties.put("mail.imap.host", emailProperties.host());
+        properties.put("mail.imap.port", emailProperties.port());
         properties.put("mail.imaps.ssl.trust", "*");
         properties.put("mail.imaps.partialfetch", "false");
     }
 
     public void checkEmail() {
-        if (!telegramBot.isAllowedToSendMessage()) {
-            return;
-        }
-
         Session emailSession = Session.getDefaultInstance(properties);
         try (Store store = emailSession.getStore("imaps")) {
-            store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
+            store.connect(emailProperties.host(), emailProperties.login(), emailProperties.password());
 
             IMAPFolder inboxFolder = (IMAPFolder) store.getFolder("INBOX");
             processMessages(inboxFolder);
@@ -53,7 +46,7 @@ public class EmailService {
         }
     }
 
-    private void processMessages(IMAPFolder inboxFolder) throws MessagingException, IOException, TelegramApiException {
+    private void processMessages(IMAPFolder inboxFolder) throws MessagingException, IOException {
         inboxFolder.open(Folder.READ_WRITE);
 
         if (inboxFolder.getMessageCount() == 0) {
@@ -62,12 +55,12 @@ public class EmailService {
         }
 
         for (Message message : inboxFolder.getMessages()) {
-            if (!message.getFrom()[0].toString().contains(emailProperties.getLogin())) {
+            if (!message.getFrom()[0].toString().contains(emailProperties.login())) {
                 continue;
             }
-            InputStream photo = getPhotoFromMessage(message);
+            BodyPart photo = getPhotoFromMessage(message);
             if (photo != null) {
-                telegramBot.sendPhoto(photo);
+                telegramSender.sendPhoto(photo.getFileName(), photo.getInputStream(), photo.getSize());
                 message.setFlag(Flags.Flag.SEEN, true);
                 inboxFolder.moveMessages(new Message[]{message}, inboxFolder.getStore().getFolder("Детекция движения"));
                 break;
@@ -79,12 +72,12 @@ public class EmailService {
         inboxFolder.close();
     }
 
-    private InputStream getPhotoFromMessage(Message message) throws MessagingException, IOException {
+    private BodyPart getPhotoFromMessage(Message message) throws MessagingException, IOException {
         Multipart content = (Multipart) message.getContent();
         for (int i = 0; i < content.getCount(); i++) {
             BodyPart bodyPart = content.getBodyPart(i);
-            if (bodyPart.isMimeType(MimeTypeUtils.IMAGE_JPEG_VALUE) || bodyPart.isMimeType("image/jpg")) {
-                return bodyPart.getInputStream();
+            if (bodyPart.isMimeType("image/jpeg") || bodyPart.isMimeType("image/jpg")) {
+                return bodyPart;
             }
         }
         return null;
@@ -93,13 +86,13 @@ public class EmailService {
     public void removeUnnecessary() {
         Session emailSession = Session.getDefaultInstance(properties);
         try (Store store = emailSession.getStore("imaps")) {
-            store.connect(emailProperties.getHost(), emailProperties.getLogin(), emailProperties.getPassword());
+            store.connect(emailProperties.host(), emailProperties.login(), emailProperties.password());
 
             IMAPFolder motionDetectionFolder = (IMAPFolder) store.getFolder("Детекция движения");
 
             motionDetectionFolder.open(Folder.READ_WRITE);
 
-            int unnecessaryCount = motionDetectionFolder.getMessageCount() - emailProperties.getNecessaryCount();
+            int unnecessaryCount = motionDetectionFolder.getMessageCount() - emailProperties.necessaryCount();
             if (unnecessaryCount <= 0) {
                 motionDetectionFolder.close();
                 return;

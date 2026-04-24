@@ -1,4 +1,4 @@
-FROM amazoncorretto:25-alpine-jdk
+FROM eclipse-temurin:25-jre-alpine
 
 COPY target/reality.jar /reality/
 COPY /scripts /scripts

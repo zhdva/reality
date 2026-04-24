@@ -1,10 +1,11 @@
 package org.zhadaev.reality;
 
-import org.springframework.web.bind.annotation.*;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 
-@RestController
-@RequestMapping(value = "/crutch")
+@Controller("/crutch")
 public class CrutchController {
-    @GetMapping
+
+    @Get
     public void emptyApi() {}
 }

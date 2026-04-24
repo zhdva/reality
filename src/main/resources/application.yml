@@ -1,18 +1,18 @@
-server:
-  servlet:
+micronaut:
+  server:
     context-path: /reality
-  port: 8080
+    port: 8080
+
 app:
   host: "${APP_HOST}"
+
 email:
   host: "${EMAIL_HOST:imap.mail.ru}"
   port: "${EMAIL_PORT:993}"
   login: "${EMAIL_LOGIN}"
   password: "${EMAIL_PASSWORD}"
-  necessaryCount: "${EMAIL_NECESSARY_COUNT:50000}"
+  necessary-count: "${EMAIL_NECESSARY_COUNT:50000}"
+
 telegram:
-  bot:
-    name: "reality-bot"
-    token: "${TG_BOT_TOKEN}"
-  chat:
-    id: "${TG_CHAT_ID}"
+  bot-token: "${TG_BOT_TOKEN}"
+  chat-id: "${TG_CHAT_ID}"
