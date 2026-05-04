@@ -1,9 +1,7 @@
-#!/bin/sh
-
-apk update
+#!/bin/bash
 
 . ./scripts/tailscale.sh
 
 ./scripts/mtproto.sh
 
-exec java -jar /reality/reality.jar
+exec ./reality -Djava.net.preferIPv4Stack=true

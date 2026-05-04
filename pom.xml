@@ -25,12 +25,9 @@
             <artifactId>micronaut-inject</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micronaut</groupId>
-            <artifactId>micronaut-http-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut</groupId>
-            <artifactId>micronaut-http-server-netty</artifactId>
+            <groupId>io.micronaut.servlet</groupId>
+            <artifactId>micronaut-http-server-jetty</artifactId>
+            <version>5.6.1</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -41,11 +38,6 @@
             <groupId>com.sun.mail</groupId>
             <artifactId>jakarta.mail</artifactId>
             <version>2.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.32</version>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
@@ -60,6 +52,30 @@
             <plugin>
                 <groupId>io.micronaut.maven</groupId>
                 <artifactId>micronaut-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-native</id>
+                        <goals>
+                            <goal>compile-no-fork</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>${exec.mainClass}</mainClass>
+                    <buildArgs>
+                        <arg>--enable-url-protocols=http,https</arg>
+                        <arg>-H:IncludeResources=.*\.yml</arg>
+                        <arg>-H:IncludeResources=META-INF/services/.*</arg>
+                        <arg>-H:+ReportExceptionStackTraces</arg>
+                        <arg>-H:+SharedArenaSupport</arg>
+                    </buildArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -46,7 +46,7 @@ public class EmailService {
         }
     }
 
-    private void processMessages(IMAPFolder inboxFolder) throws MessagingException, IOException {
+    private void processMessages(IMAPFolder inboxFolder) throws MessagingException, IOException, InterruptedException {
         inboxFolder.open(Folder.READ_WRITE);
 
         if (inboxFolder.getMessageCount() == 0) {
@@ -60,7 +60,7 @@ public class EmailService {
             }
             BodyPart photo = getPhotoFromMessage(message);
             if (photo != null) {
-                telegramSender.sendPhoto(photo.getFileName(), photo.getInputStream(), photo.getSize());
+                telegramSender.sendPhoto(photo.getInputStream().readAllBytes(), photo.getFileName());
                 message.setFlag(Flags.Flag.SEEN, true);
                 inboxFolder.moveMessages(new Message[]{message}, inboxFolder.getStore().getFolder("Детекция движения"));
                 break;

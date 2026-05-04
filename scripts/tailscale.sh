@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-apk add --no-cache tailscale curl jq
+command -v tailscale >/dev/null 2>&1 || { echo "ERROR: tailscale не найден"; exit 1; }
+command -v curl >/dev/null 2>&1 || { echo "ERROR: curl не найден"; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq не найден"; exit 1; }
 
 tailscaled --tun=userspace-networking --state=/var/lib/tailscale/tailscaled.state 2>&1 & TAILSCALED_PID=$!
 echo "Tailscaled запущен с PID: $TAILSCALED_PID"

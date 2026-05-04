@@ -1,10 +1,14 @@
 package org.zhadaev.reality;
 
-import io.micronaut.http.HttpRequest;
-import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.annotation.Client;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.inject.Singleton;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 @Singleton
 public class Scheduler {
@@ -13,16 +17,25 @@ public class Scheduler {
 
     private final HttpClient httpClient;
 
-    public Scheduler(@Client("${app.host}") HttpClient httpClient, EmailService emailService) {
+    private final String appHost;
+
+    public Scheduler(HttpClient httpClient, EmailService emailService, @Value("${app.host}") String appHost) {
         this.httpClient = httpClient;
         this.emailService = emailService;
+        this.appHost = appHost;
     }
 
     @Scheduled(fixedDelay = "10s")
-    void crutch() {
-        httpClient.toBlocking().exchange(
-                HttpRequest.GET("/reality/crutch")
-        );
+    void crutch() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                                         .uri(URI.create(appHost + "/reality/crutch"))
+                                         .header("Content-Type", "application/json")
+                                         .GET()
+                                         .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            System.out.println("Костыль не вставлен: [" + response.statusCode() + "] " + response.body());
+        }
     }
 
     @Scheduled(fixedDelay = "1s")
